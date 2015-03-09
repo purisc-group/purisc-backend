@@ -19,26 +19,53 @@ def equal(instr,assem):
 	result = instr.result;
 	a = instr.args[1];
 	b = instr.args[2];
-	t0 = "t" + assem.stackCount;
+	t0 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
+	notPos = assem.getNextReserved("notPos");
+	done = assem.getNextReserved("done");
+	eq = assem.getNextReserved("eq");
 
+	#check for literal operands and add them to the datamemory if necessary
+	literalPattern = re.compile("-?\d+");
+	if literalPattern.match(a):
+		if a not in assem.dataMem:
+			assem.dataMem[a] = int(a);
+
+	if literalPattern.match(b):
+		if b not in assem.dataMem:
+			assem.dataMem[b] = int(b);
+
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
 	assem.progMem.append(next_subleq(a,result));
-	assem.progMem.append(subleq(b,result,"notPos"));
-	assem.progMem.append(subleq(result,result,"done"));
-	assem.progMem.append(subleq("notPost " + t0,t0,"NEXT"));
-	assem.progMem.append(subleq(t0,result,"eq"));
-	assem.progMem.append(subleq(result,result,"done"));
-	assem.progMem.append(subleq("eq: " + str(1),result,"NEXT"));
-	assem.progMem.append(subleq("done: " + t0,t0,NEXT));
+	assem.progMem.append(subleq(b,result,notPos));
+	assem.progMem.append(subleq(result,result,done));
+	assem.progMem.append(subleq(notPos + ": " + t0,t0,"NEXT"));
+	assem.progMem.append(subleq(t0,result,eq));
+	assem.progMem.append(subleq(result,result,done));
+	assem.progMem.append(subleq(eq + ": one",result,"NEXT"));
+	assem.progMem.append(subleq(done + ": " + t0,t0,"NEXT"));
+
+	assem.dataMem["one"] = 1;
 
 def notEqual(instr,assem):
 	result = instr.result;
 	a = instr.args[1];
 	b = instr.args[2];
-	t0 = "t" + assem.stackCount;
+	t0 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
 
+	#check for literal operands and add them to the datamemory if necessary
+	literalPattern = re.compile("-?\d+");
+	if literalPattern.match(a):
+		if a not in assem.dataMem:
+			assem.dataMem[a] = int(a);
+
+	if literalPattern.match(b):
+		if b not in assem.dataMem:
+			assem.dataMem[b] = int(b);
+
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
 	assem.progMem.append(next_subleq(a,result));
 	assem.progMem.append(next_subleq(b,result));
@@ -52,32 +79,31 @@ def sGreater(instr,assem):
 	t1 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
 
-	if "%" not in a and "@" not in a:
-		print a
-		aOld = a;
-		a = "L" + str(a);
+	#check for literal operands and add them to the datamemory if necessary
+	literalPattern = re.compile("-?\d+");
+	if literalPattern.match(a):
 		if a not in assem.dataMem:
-			assem.dataMem[a] = aOld;
+			assem.dataMem[a] = int(a);
 
-	if "%" not in b and "@" not in b:
-		print b
-		aOld = b;
-		b = "L" + str(b);
+	if literalPattern.match(b):
 		if b not in assem.dataMem:
-			assem.dataMem[b] = aOld;
+			assem.dataMem[b] = int(b);
+
+	less = assem.getNextReserved("less");
+	done = assem.getNextReserved("done");
 
 
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
 	assem.progMem.append(clear(t0));
 	assem.progMem.append(next_subleq(a,t0));
 	assem.progMem.append(next_subleq(t0,result));
-	assem.progMem.append(subleq(b,result,"less"));
-	assem.progMem.append(subleq(result,result,"done"));
-	assem.progMem.append(next_subleq("less: " + result, result));
+	assem.progMem.append(subleq(b,result,less));
+	assem.progMem.append(subleq(result,result,done));
+	assem.progMem.append(next_subleq(less + ": " + result, result));
 	assem.progMem.append(next_subleq("one",result));
-	assem.progMem.append(next_subleq("done: " + t0,t0));
+	assem.progMem.append(next_subleq(done + ": " + t0,t0));
 
-	print "here"
 	if "one" not in assem.dataMem:
 		assem.dataMem["one"] = 1;
 
@@ -90,36 +116,65 @@ def sGreaterEq(instr,assem):
 	t1 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
 
+	negOne = assem.getNextReserved("negOne");
+	less = assem.getNextReserved("less");
+	done = assem.getNextReserved("done");
+
+	#check for literal operands and add them to the datamemory if necessary
+	literalPattern = re.compile("-?\d+");
+	if literalPattern.match(a):
+		if a not in assem.dataMem:
+			assem.dataMem[a] = int(a);
+
+	if literalPattern.match(b):
+		if b not in assem.dataMem:
+			assem.dataMem[b] = int(b);
+
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
 	assem.progMem.append(next_subleq("negOne",result));
 	assem.progMem.append(clear(t0));
 	assem.progMem.append(next_subleq(a,t0));
-	assem.progMem.append(next_subleq(t0,c));
-	assem.progMem.append(subleq(b,result,"less"));
-	assem.progMem.append(subleq(t1,t1,"done"));
-	assem.progMem.append(next_subleq("less: " + result,result));
-	assem.progMem.append(next_subleq("done: " + t0,t0));
+	assem.progMem.append(next_subleq(t0,result));
+	assem.progMem.append(subleq(b,result,less));
+	assem.progMem.append(subleq(t1,t1,));
+	assem.progMem.append(next_subleq(less + ": " + result,result));
+	assem.progMem.append(next_subleq(done + ": " + t0,t0));
 
 	if "negOne" not in assem.dataMem:
-		assem.dataMem[negOne] = -1;
+		assem.dataMem["negOne"] = -1;
 
 def sLess(instr,assem):
+	#subtract a - b
+	#if positive return 0
+	#else flip result
+
 	result = instr.result;
 	a = instr.args[1];
 	b = instr.args[2];
 	t0 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
-	t1 = "t" + str(assem.stackCount);
-	assem.stackCount += 1;
 
+	notPos = assem.getNextReserved("notPos");
+	done = assem.getNextReserved("done");
+
+	#check for literal operands and add them to the datamemory if necessary
+	literalPattern = re.compile("-?\d+");
+	if literalPattern.match(a):
+		if a not in assem.dataMem:
+			assem.dataMem[a] = int(a);
+
+	if literalPattern.match(b):
+		if b not in assem.dataMem:
+			assem.dataMem[b] = int(b);
+
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
-	assem.progMem.append(clear(t0));
-	assem.progMem.append(next_subleq(b,t0));
-	assem.progMem.append(next_subleq(t0,result));
-	assem.progMem.append(subleq(a,result,"less"));
-	assem.progMem.append(subleq(t1,t1,"done"));
-	assem.progMem.append(next_subleq("less: " + result, result));
-	assem.progMem.append(next_subleq("done: " + t0,t0));
+	assem.progMem.append(next_subleq(b,result));
+	assem.progMem.append(subleq(a,result,notPos));
+	assem.progMem.append(subleq(result,result,done));
+	assem.progMem.append(next_subleq(notPos + ": " + t0,t0));
+	assem.progMem.append(next_subleq(done + ": " + t0,result));
 
 def sLessEq(instr,assem):
 	result = instr.result;
@@ -130,15 +185,29 @@ def sLessEq(instr,assem):
 	t1 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
 
+	less = assem.getNextReserved("less");
+	done = assem.getNextReserved("done");
+
+	#check for literal operands and add them to the datamemory if necessary
+	literalPattern = re.compile("-?\d+");
+	if literalPattern.match(a):
+		if a not in assem.dataMem:
+			assem.dataMem[a] = int(a);
+
+	if literalPattern.match(b):
+		if b not in assem.dataMem:
+			assem.dataMem[b] = int(b);
+
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
 	assem.progMem.append(next_subleq("negOne",result));
 	assem.progMem.append(clear(t0));
 	assem.progMem.append(next_subleq(b,t0));
 	assem.progMem.append(next_subleq(t0,c));
-	assem.progMem.append(subleq(a,result,"less"));
-	assem.progMem.append(subleq(t1,t1,"done"));
-	assem.progMem.append(next_subleq("less: " + result,result));
-	assem.progMem.append(next_subleq("done: " + t0,t0));
+	assem.progMem.append(subleq(a,result,less));
+	assem.progMem.append(subleq(t1,t1,done));
+	assem.progMem.append(next_subleq(less + ": " + result,result));
+	assem.progMem.append(next_subleq(done + ": " + t0,t0));
 
 	if "negOne" not in assem.dataMem:
 		assem.dataMem[negOne] = -1;

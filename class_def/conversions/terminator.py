@@ -1,6 +1,7 @@
 import re
 from helpers import subleq
 from helpers import next_subleq
+from helpers import clear
 
 def branchParseArgs(argStr):
 	args = [];
@@ -32,10 +33,13 @@ def branch(instr, assem):
 		a = instr.args[0];
 		b = instr.args[1];
 		c = instr.args[2];
+		notPos = assem.getNextReserved("notPos");
+
+		assem.progMem.append("\n// " + instr.raw);
 		assem.progMem.append(next_subleq(t0,t0));
-		assem.progMem.append(subleq(a,t0,"notPos"));
+		assem.progMem.append(subleq(a,t0,notPos));
 		assem.progMem.append(subleq(t0,t0,b));
-		assem.progMem.append(next_subleq("notPos: " + t1,t1));
+		assem.progMem.append(next_subleq(notPos + ": " + t1,t1));
 		assem.progMem.append(subleq(t1,t0,c));
 		assem.progMem.append(subleq(t1,t1,b));
 
@@ -44,4 +48,15 @@ def labelParseArgs(argStr):
 	return ["%" + str(label)]
 
 def label(instr, assem):
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(instr.args[0] + ":");
+
+def returnParseArgs(argStr):
+	arg = re.findall("(?<=i32)\s+\S+",argStr)[0];
+	return [arg];
+
+def returnF(instr, assem):
+	assem.progMem.append("\n// " + instr.raw)
+	assem.progMem.append(clear("return"));
+	assem.progMem.append(next_subleq(instr.args[0],"return"));
+	assem.progMem.append(subleq("0","0","#-1"))

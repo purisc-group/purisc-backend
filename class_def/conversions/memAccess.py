@@ -33,6 +33,7 @@ def store(instr, assem):
 	if "%" not in arg1 and arg1 not in assem.dataMem: #move literal->b
 			assem.dataMem[arg1] = int(arg1);
 	
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(arg2));
 	assem.progMem.append(subleq(arg1,arg2));
 
@@ -40,5 +41,6 @@ def load(instr, assem):
 	arg1 = instr.args[0];
 	result = instr.result;
 
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
 	assem.progMem.append(subleq(arg1,result));

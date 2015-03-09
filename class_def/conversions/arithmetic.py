@@ -23,6 +23,7 @@ def add(instr, assem):
 		if arg2 not in assem.dataMem:
 			assem.dataMem[arg2] = arg2;
 
+	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(subleq(result,result));
 	assem.progMem.append(clear(t0));
 	assem.progMem.append(subleq(arg1,result));
@@ -35,6 +36,7 @@ def sub(instr, assem):
 	arg2 = instr.args[1];
 	result = instr.result;
 
+	assem.progMem.append("\n // " + instr.raw);
 	assem.progMem.append(clear(result))
 	assem.progMem.append(subleq(arg2, result));
 	assem.progMem.append(subleq(arg1, result));

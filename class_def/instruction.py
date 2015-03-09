@@ -16,6 +16,7 @@ class Instruction:
 				index = instrStr.find(tupple[0]) + len(tupple[0]);
 				self.args = tupple[1](instrStr[index:]);
 				self.generateSubleq = tupple[2];
+				self.raw = instrStr;
 				break;
 
 
@@ -42,5 +43,6 @@ instrTypes = [
 	("sext", voidParser, voidAction),
 	("br", term.branchParseArgs, term.branch),
 	("icmp", logical.icmpParseArgs, logical.icmp),
-	("; <label>:", term.labelParseArgs, term.label)
+	("; <label>:", term.labelParseArgs, term.label),
+	("ret", term.returnParseArgs, term.returnF)
 ]

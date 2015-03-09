@@ -5,10 +5,7 @@ import sys, getopt
 
 def main(argv):
     compilerVersion = 0.1;
-    [inputFileName, outputFileName, fVerbose] = parseCmdArgs(argv);
-    print inputFileName
-    print outputFileName
-    print fVerbose
+    [inputFileName, outputFileName, fVerbose, debugging] = parseCmdArgs(argv);
 
     inputFile = open(inputFileName,'r');
     inputString = inputFile.read();
@@ -35,9 +32,17 @@ def main(argv):
 
     output = open(outputFileName,"w");
     output.write("//Compiler with j-backend-" + str(compilerVersion) + "\n");
-    output.write("PROGRAM_MEM:\n\n")
+    output.write("PROGRAM_MEM:\n\n");
+
+    filt = re.compile("\s*//.*");
     for line in assem.progMem:
-        lineToWrite = line;
+
+        #filter out comments if debugging flag is set
+        if debugging:
+            lineToWrite = line;
+        else:
+            lineToWrite = filt.sub("",line);
+        
         if line[-1] != ":":
             lineToWrite += "\n";
             
@@ -62,12 +67,13 @@ def parseCmdArgs(argv):
     inputFileName = "input.ll";
     outputFileName = "";
     fVerbose = False;
+    debugging = False;
 
 #Command line arguments
     try:
-        opts, args = getopt.getopt(argv, "i:o:v")
+        opts, args = getopt.getopt(argv, "i:o:vd")
     except getopt.GetoptError:
-        print "Usage: python",sys.argv[0],"[-i inputfile] [-o outputfile] [-v]"
+        print "Usage: python",sys.argv[0],"[-i inputfile] [-o outputfile] [-v] [-d]"
         sys.exit(2);
 
     for opt, arg in opts:
@@ -80,6 +86,9 @@ def parseCmdArgs(argv):
         elif opt == "-v":
             fVerbose = True;
 
+        elif opt == "-d":
+            debugging = True;
+
     if outputFileName == "":
         endIndex = inputFileName.rfind(".");
         if endIndex == -1:
@@ -87,7 +96,7 @@ def parseCmdArgs(argv):
 
         outputFileName = inputFileName[:endIndex] + ".subleq";
 
-    return inputFileName, outputFileName, fVerbose
+    return inputFileName, outputFileName, fVerbose, debugging;
 
 if __name__ == '__main__':
     main(sys.argv[1:]);
