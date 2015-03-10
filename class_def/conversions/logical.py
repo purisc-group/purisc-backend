@@ -76,8 +76,6 @@ def sGreater(instr,assem):
 	b = instr.args[2];
 	t0 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
-	t1 = "t" + str(assem.stackCount);
-	assem.stackCount += 1;
 
 	#check for literal operands and add them to the datamemory if necessary
 	literalPattern = re.compile("-?\d+");
@@ -89,19 +87,15 @@ def sGreater(instr,assem):
 		if b not in assem.dataMem:
 			assem.dataMem[b] = int(b);
 
-	less = assem.getNextReserved("less");
+	notPos = assem.getNextReserved("notPos");
 	done = assem.getNextReserved("done");
-
 
 	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
-	assem.progMem.append(clear(t0));
-	assem.progMem.append(next_subleq(a,t0));
-	assem.progMem.append(next_subleq(t0,result));
-	assem.progMem.append(subleq(b,result,less));
-	assem.progMem.append(subleq(result,result,done));
-	assem.progMem.append(next_subleq(less + ": " + result, result));
-	assem.progMem.append(next_subleq("one",result));
+	assem.progMem.append(next_subleq(b,result));
+	assem.progMem.append(subleq(a,result,notPos));
+	assem.progMem.append(subleq(t0,t0,done));
+	assem.progMem.append(next_subleq(notPos + ": " + result,result));
 	assem.progMem.append(next_subleq(done + ": " + t0,t0));
 
 	if "one" not in assem.dataMem:
@@ -113,11 +107,8 @@ def sGreaterEq(instr,assem):
 	b = instr.args[2];
 	t0 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
-	t1 = "t" + str(assem.stackCount);
-	assem.stackCount += 1;
 
-	negOne = assem.getNextReserved("negOne");
-	less = assem.getNextReserved("less");
+	notPos = assem.getNextReserved("notPos");
 	done = assem.getNextReserved("done");
 
 	#check for literal operands and add them to the datamemory if necessary
@@ -132,17 +123,15 @@ def sGreaterEq(instr,assem):
 
 	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
-	assem.progMem.append(next_subleq("negOne",result));
-	assem.progMem.append(clear(t0));
-	assem.progMem.append(next_subleq(a,t0));
-	assem.progMem.append(next_subleq(t0,result));
-	assem.progMem.append(subleq(b,result,less));
-	assem.progMem.append(subleq(t1,t1,));
-	assem.progMem.append(next_subleq(less + ": " + result,result));
+	assem.progMem.append(next_subleq("one",result));
+	assem.progMem.append(next_subleq(b,result));
+	assem.progMem.append(subleq(a,result,notPos));
+	assem.progMem.append(subleq(t0,t0,done));
+	assem.progMem.append(next_subleq(notPos + ": " + result,result));
 	assem.progMem.append(next_subleq(done + ": " + t0,t0));
 
-	if "negOne" not in assem.dataMem:
-		assem.dataMem["negOne"] = -1;
+	if "one" not in assem.dataMem:
+		assem.dataMem["one"] = 1;
 
 def sLess(instr,assem):
 	#subtract a - b
@@ -182,10 +171,8 @@ def sLessEq(instr,assem):
 	b = instr.args[2];
 	t0 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
-	t1 = "t" + str(assem.stackCount);
-	assem.stackCount += 1;
 
-	less = assem.getNextReserved("less");
+	notPos = assem.getNextReserved("notPos");
 	done = assem.getNextReserved("done");
 
 	#check for literal operands and add them to the datamemory if necessary
@@ -201,16 +188,14 @@ def sLessEq(instr,assem):
 	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
 	assem.progMem.append(next_subleq("negOne",result));
-	assem.progMem.append(clear(t0));
-	assem.progMem.append(next_subleq(b,t0));
-	assem.progMem.append(next_subleq(t0,c));
-	assem.progMem.append(subleq(a,result,less));
-	assem.progMem.append(subleq(t1,t1,done));
-	assem.progMem.append(next_subleq(less + ": " + result,result));
-	assem.progMem.append(next_subleq(done + ": " + t0,t0));
+	assem.progMem.append(next_subleq(b,result));
+	assem.progMem.append(subleq(a,result,notPos));
+	assem.progMem.append(subleq(result,result,done));
+	assem.progMem.append(next_subleq(notPos + ": " + t0,t0));
+	assem.progMem.append(next_subleq(done + ": " + t0,result));
 
 	if "negOne" not in assem.dataMem:
-		assem.dataMem[negOne] = -1;
+		assem.dataMem["negOne"] = -1;
 
 operations = {
 	"eq" : equal,
@@ -218,5 +203,5 @@ operations = {
 	"sgt" : sGreater,
 	"sge" : sGreaterEq,
 	"slt" : sLess,
-	"ste" : sLessEq
+	"sle" : sLessEq
 }
