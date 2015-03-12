@@ -1,6 +1,8 @@
+from collections import OrderedDict
+
 class Assembly:
     def __init__(self):
-        self.dataMem = {}; 
+        self.dataMem = OrderedDict(); 
         self.progMem = [];
         #count of the last temp variable used
         #if is count=3 then t3 was used last

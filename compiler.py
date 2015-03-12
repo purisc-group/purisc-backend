@@ -54,8 +54,12 @@ def main(argv):
     output.write("\n\n");
     output.write("DATA_MEM:\n\n");
     for mem in assem.dataMem:
-        lineToWrite = mem + ":";
-        lineToWrite += "#" + str(assem.dataMem[mem]) + "\n";
+        value = assem.dataMem[mem];
+        lineToWrite = str(mem) + ":";
+
+        if re.match("-?\d",str(value)):
+            lineToWrite += "#";
+        lineToWrite += str(value) + "\n";
 
         output.write(lineToWrite);
         if fVerbose:

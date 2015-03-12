@@ -34,7 +34,7 @@ def voidParser(args):
 	return "";
 
 instrTypes = [
-	("alloca", voidParser, voidAction),
+	("alloca", mem.allocateParseArgs, mem.allocate),
 	("add", arithmetic.parseArgs, arithmetic.add),
 	("sub", arithmetic.parseArgs, arithmetic.sub),
 	("store", mem.storeParseArgs, mem.store),
@@ -44,5 +44,6 @@ instrTypes = [
 	("br", term.branchParseArgs, term.branch),
 	("icmp", logical.icmpParseArgs, logical.icmp),
 	("; <label>:", term.labelParseArgs, term.label),
-	("ret", term.returnParseArgs, term.returnF)
+	("ret", term.returnParseArgs, term.returnF),
+	("getelementptr", mem.ptrMathParseArgs, mem.ptrMath)
 ]
