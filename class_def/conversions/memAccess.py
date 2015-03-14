@@ -1,6 +1,7 @@
 from helpers import next_subleq as subleq
 from helpers import clear
 import re
+import sys
 
 def allocateParseArgs(argStr):
 	args = re.findall("(?<=\[)\s*\d+",argStr);
@@ -13,13 +14,21 @@ def allocateParseArgs(argStr):
 
 def allocate(instr,assem):
 	#only need to allocate memory if an array is in the argument
-	if len(instr.args) == 1 and instr.args[0] > 0:
-		#allocate a pointer variable to hold the address of the array
-		#and allocaate the number of locations equal to the length of the array		
-		for i in xrange(instr.args[0]):
-			assem.dataMem[instr.result + str(i)] = 0;
+	if len(instr.args) > 0:
+		#find the size of the memory to allocate
+		size = 1;
+		for arg in instr.args:
+			size *= arg;
 
-		assem.dataMem[instr.result] = "&" + instr.result + "0";
+		if size > 0:		
+			for i in xrange(size):
+				assem.dataMem[instr.result + str(i)] = 0;
+
+			assem.dataMem[instr.result] = "&" + instr.result + "0";
+
+		#arrays of size 0 are allowed in c (trying to mimic gcc behaviour) 
+		else:
+			assem.dataMem[instr.result] = "&" + instr.result;
 
 def storeParseArgs(argStr):
 	keyword = "i32";
@@ -68,6 +77,7 @@ def store(instr, assem):
 		assem.progMem.append(subleq(arg2,p_1));
 		assem.progMem.append(clear(p_2));
 		assem.progMem.append(subleq(arg2,p_2));
+		assem.progMem.append(subleq(zero,zero)); #noop, must be at least 2 instructions between modifying and instruction and executing it
 
 		assem.progMem.append(subleq(p_0 + ":#1", p_1 + ":#1"));
 		assem.progMem.append(subleq(arg1, p_2 + ":#1"));
@@ -85,14 +95,23 @@ def load(instr, assem):
 	assem.progMem.append(subleq(arg1,result));
 
 def ptrMathParseArgs(argStr):
+	args = re.findall("(?<=\[)\s*\d+",argStr);
+	memArgs = [];
+	for arg in args:
+		if arg != "":
+			memArgs.append(int(arg))
+
 	arg1 = re.findall("(?<=\*\s)\S+(?=,)", argStr)[0];
 	arg2 = re.findall("(?<=i64\s)\S+", argStr)[0];
 
-	return [arg1, arg2];
+	memArgs.append(arg1);
+	memArgs.append(arg2);
+	return memArgs;
 
 def ptrMath(instr, assem):
-	a = instr.args[0];
-	b = instr.args[1];
+	a = instr.args[-2];
+	b = instr.args[-1];
+	sizeArgs = instr.args[0:len(instr.args)-2]; #data for the size of the structure accessing
 	result = instr.result;
 
 	#check for literal operands and add them to the datamemory if necessary
@@ -103,6 +122,10 @@ def ptrMath(instr, assem):
 
 	t0 = "t" + str(assem.stackCount);
 	assem.stackCount += 1;
+
+	if len(sizeArgs) > 1:
+		print "error - can't handle multidimensional structs just yet...sorry";
+		sys.exit(2);
 
 	assem.progMem.append("\n// " + instr.raw);
 	assem.progMem.append(clear(result));
