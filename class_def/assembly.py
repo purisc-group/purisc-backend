@@ -20,3 +20,8 @@ class Assembly:
             self.reservedCount[keyword] = 0;
 
         return str(keyword) + str(self.reservedCount[keyword]);
+
+    def getNextTemp(self):
+        temp = "t" + str(self.stackCount);
+        self.stackCount +=1;
+        return temp;

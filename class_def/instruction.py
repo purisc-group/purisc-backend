@@ -40,10 +40,11 @@ instrTypes = [
 	("store", mem.storeParseArgs, mem.store),
 	("load", mem.loadParseArgs, mem.load),
 	("bitcase", voidParser, voidAction),
-	("sext", voidParser, voidAction),
+	("sext", mem.sextParseArgs, mem.sext),
 	("br", term.branchParseArgs, term.branch),
 	("icmp", logical.icmpParseArgs, logical.icmp),
 	("; <label>:", term.labelParseArgs, term.label),
 	("ret", term.returnParseArgs, term.returnF),
-	("getelementptr", mem.ptrMathParseArgs, mem.ptrMath)
+	("getelementptr", mem.ptrMathParseArgs, mem.ptrMath),
+	("mul", arithmetic.parseArgs, arithmetic.mul)
 ]

@@ -31,18 +31,28 @@ def allocate(instr,assem):
 			assem.dataMem[instr.result] = "&" + instr.result;
 
 def storeParseArgs(argStr):
-	keyword = "i32";
 
-	index1 = argStr.find(keyword) + len(keyword);
-	index1End = argStr.find(',');
+	arg1Matches = re.findall("(?<=i32)\s+\S+(?=,)|(?<=i64)\s+\S+(?=,)",argStr);
+	if len(arg1Matches) != 1:
+		print "parse error on " + argStr
+		sys.exit(2)
 
-	index2 = argStr.find("i32*") + 4;
-	index2End = argStr.find(',', index2);
+	arg1 = arg1Matches[0];
+	if arg1 == "":
+		print "parse error on " + argStr
+		sys.exit(2);
 
-	if index2End == -1:
-		index2End = len(argStr)
+	arg2Matches = re.findall("(?<=i32\*)\s+[^\s,]+|(?<=i64\*)\s+\[^\s,]+", argStr);
+	if len(arg2Matches) != 1:
+		print "parse error on " + argStr
+		sys.exit(2)
 
-	return argStr[index1:index1End].strip(), argStr[index2:index2End].strip();
+	arg2 = arg2Matches[0];
+	if arg2 == "":
+		print "parse error on " + argStr
+		sys.exit(2);
+
+	return [arg1,arg2];
 
 def loadParseArgs(argStr):
 	keyword = "i32*";
@@ -135,3 +145,15 @@ def ptrMath(instr, assem):
 	assem.progMem.append(subleq(b,result));
 
 	assem.dataMem[result] = "&" + a; #dummy
+
+def sextParseArgs(argStr):
+	arg1 = re.findall("(?<=i32)\s+\S+\s+(?=to)",argStr)[0];
+
+	return [arg1]
+
+def sext(instr, assem):
+	a = instr.args[0];
+	result = instr.result;
+
+	assem.progMem.append(clear(result));
+	assem.progMem.append(next_subleq(a,result));
