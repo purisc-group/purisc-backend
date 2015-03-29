@@ -2,19 +2,37 @@ import re
 from class_def.function import Function
 from class_def.assembly import Assembly
 import sys, getopt
+from subprocess import call
+import os
 
 def main(argv):
-    compilerVersion = 0.1;
-    [inputFileName, outputFileName, fVerbose, debugging] = parseCmdArgs(argv);
+    compilerVersion = 0.11;
+    [inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging] = parseCmdArgs(argv);
 
+    #run clang if given a c or cl file
+    if ext == 'c':
+        command = "clang -S -emit-llvm -o " + inputFileName + ".ll " + inputFileName;
+        call(command.split());
+        inputFileName = inputFileName + ".ll"; 
+
+    elif ext == 'cl':
+        command = "clang -S -emit-llvm -x cl -o " +  inputFileName + ".ll " + inputFileName;
+        call(command.split());
+        inputFileName = inputFileName + ".ll";
+
+    #read the file
     inputFile = open(inputFileName,'r');
     inputString = inputFile.read();
     inputFile.close();
 
-    functions = [];
+    #clean up the .ll file if clang was run
+    if ext in ('c', 'cl'):
+        os.remove(inputFileName);
 
     #walk through the input file, parsing each function and creating a function 
     #class for each function
+    functions = [];
+    
     currentIndex = inputString.find("define", 0);
     while(currentIndex != -1):
         endIndex = inputString.find("}",currentIndex);
@@ -30,7 +48,7 @@ def main(argv):
         for instruction in function.instructions:
             instruction.generateSubleq(instruction,assem);
 
-    output = open(outputFileName,"w");
+    output = open(assemFileName,"w");
     output.write("//Compiler with j-backend-" + str(compilerVersion) + "\n");
     output.write("PROGRAM_MEM:\n\n");
 
@@ -67,17 +85,27 @@ def main(argv):
 
     output.close();
 
+    #run the assembler if necessary
+    if outputFileName != "":
+        compilerPath = sys.argv[0];
+        path = compilerPath[:compilerPath.rindex("compiler.py")];
+        command = "python " + path + "assembler.py -i " + assemFileName + " -o " + outputFileName;
+        print command
+        call(command.split());
+        os.remove(assemFileName);
+
 def parseCmdArgs(argv):
-    inputFileName = "input.ll";
     outputFileName = "";
     fVerbose = False;
     debugging = False;
+    frontEnd = False;
+    slqOnly = False;
 
 #Command line arguments
     try:
-        opts, args = getopt.getopt(argv, "i:o:vd")
+        opts, args = getopt.getopt(argv, "i:o:vdsh")
     except getopt.GetoptError:
-        print "Usage: python",sys.argv[0],"[-i inputfile] [-o outputfile] [-v] [-d]"
+        print usage(); 
         sys.exit(2);
 
     for opt, arg in opts:
@@ -87,20 +115,55 @@ def parseCmdArgs(argv):
         elif opt in ("-o", "--outfile"):
             outputFileName = arg;
                 
-        elif opt == "-v":
+        elif opt in ("-v", "--verbose"):
             fVerbose = True;
 
-        elif opt == "-d":
+        elif opt in ("-d", "--debugging"):
             debugging = True;
 
-    if outputFileName == "":
-        endIndex = inputFileName.rfind(".");
-        if endIndex == -1:
-            endIndex = len(inputFileName);
+        elif opt in ("-s", "--subleq"):
+            slqOnly = True; #generate subleq assembly only
 
-        outputFileName = inputFileName[:endIndex] + ".subleq";
+        elif opt in ("-h", "--help"):
+            print usage();
+            print getHelp();
+            sys.exit(0);
 
-    return inputFileName, outputFileName, fVerbose, debugging;
+    if inputFileName == "":
+        print usage();
+        sys.exit(2);
+
+    extStart = inputFileName.rfind(".");
+    if extStart == -1:
+        name = inputFileName;
+        ext = "";
+    else:
+        name = inputFileName[:extStart];
+        ext = inputFileName[extStart+1:]; 
+    assemFileName = name + '.slq';
+
+    if slqOnly:
+        outputFileName = "";
+
+    else:
+        outputFileName = name + ".machine";
+
+    return inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging;
+
+def usage():
+    return "Usage: python",sys.argv[0],"[-i inputfile] [options]";
+
+def getHelp():
+
+    helpStr = "\
+    -i, --infile <inputfile>              specify the input file, [REQUIRED]\n\
+    -o, --outputfile <outputfile>         specify the output file, defaults to the input file with .machine as the extension\n\
+    -d, --debugging                       don't filterout comments,\n\
+    -v, --verbose                         print output to the terminal\n\
+    -s, --subleq                          output subleq assembly only, don't convert to machine code\n\
+    -h, --help                            display options";
+
+    return helpStr;
 
 if __name__ == '__main__':
     main(sys.argv[1:]);

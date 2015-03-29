@@ -23,12 +23,12 @@ def add(instr, assem):
             assem.dataMem[arg2] = arg2;
 
     assem.progMem.append("\n// " + instr.raw);
-    assem.progMem.append(subleq(result,result));
+    assem.progMem.append(next_subleq(result,result));
     assem.progMem.append(clear(t0));
-    assem.progMem.append(subleq(arg1,result));
+    assem.progMem.append(next_subleq(arg1,result));
     assem.progMem.append(clear(t1));
-    assem.progMem.append(subleq(t1,result));
-    assem.progMem.append(subleq(arg2,result));
+    assem.progMem.append(next_subleq(t1,result));
+    assem.progMem.append(next_subleq(arg2,result));
 
 def sub(instr, assem):
     arg1 = instr.args[0];
@@ -37,8 +37,8 @@ def sub(instr, assem):
 
     assem.progMem.append("\n // " + instr.raw);
     assem.progMem.append(clear(result))
-    assem.progMem.append(subleq(arg2, result));
-    assem.progMem.append(subleq(arg1, result));
+    assem.progMem.append(next_subleq(arg2, result));
+    assem.progMem.append(next_subleq(arg1, result));
 
 def mul(instr, assem):
     arg1 = instr.args[0];
@@ -179,6 +179,7 @@ def mul(instr, assem):
     assem.progMem.append(subleq(t0,t0,finish));
 
     assem.progMem.append(next_subleq(flipSign + ": 0",c));
+    assem.progMem.append(next_subleq(finish + ": " + t0,t0)); #dummy
 
 
     assem.dataMem["1"] = "#1";
