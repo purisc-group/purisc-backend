@@ -56,7 +56,7 @@ def main(argv):
     #allocate memory for global ids
     assem.dataMem["work_dims"] = 11; #11 is the maximum number of dimensions allowed
     for i in range(0,12):
-        assem.dataMem["glob_ids" + i] = 0;
+        assem.dataMem["glob_ids" + str(i)] = 0;
 
     assem.dataMem["glob_ids"] = "&glob_ids0";
 
@@ -104,7 +104,6 @@ def main(argv):
         compilerPath = sys.argv[0];
         path = compilerPath[:compilerPath.rindex("compiler.py")];
         command = "python " + path + "assembler.py -i " + assemFileName + " -o " + outputFileName;
-        print command
         call(command.split());
         os.remove(assemFileName);
 

@@ -96,7 +96,7 @@ def getGlobalId(instr, assem):
     dim = instr.args[1]; #args[0] contains the function name
 
     #add the literal to the data memory if necessary
-    if re.match("\d+",dim.strip()):
+    if re.match("-?\d+",dim.strip()):
         dim = dim.strip();
         assem.dataMem[dim] = dim;
 
