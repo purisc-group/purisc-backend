@@ -48,17 +48,13 @@ def main(argv):
         for instruction in function.instructions:
             instruction.generateSubleq(instruction,assem);
 
+    #wrap the instructions in the nested for loops for each dimension
+    assem.generateKernelLoop();
+
+
     output = open(assemFileName,"w");
     output.write("//Compiler with j-backend-" + str(compilerVersion) + "\n");
     output.write("PROGRAM_MEM:\n\n");
-
-
-    #allocate memory for global ids
-    assem.dataMem["work_dims"] = 11; #11 is the maximum number of dimensions allowed
-    for i in range(0,12):
-        assem.dataMem["glob_ids" + str(i)] = 0;
-
-    assem.dataMem["glob_ids"] = "&glob_ids0";
 
     #create fake global id data if debugging is on
     if debugging:
@@ -178,5 +174,7 @@ def getHelp():
 
     return helpStr;
 
+
 if __name__ == '__main__':
     main(sys.argv[1:]);
+
