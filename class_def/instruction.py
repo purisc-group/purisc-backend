@@ -46,5 +46,6 @@ instrTypes = [
 	("; <label>:", term.labelParseArgs, term.label),
 	("ret", term.returnParseArgs, term.returnF),
 	("getelementptr", mem.ptrMathParseArgs, mem.ptrMath),
-	("mul", arithmetic.parseArgs, arithmetic.mul)
+	("mul", arithmetic.parseArgs, arithmetic.mul),
+        ("tail call", term.callParseArgs, term.call)
 ]

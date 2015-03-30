@@ -52,6 +52,20 @@ def main(argv):
     output.write("//Compiler with j-backend-" + str(compilerVersion) + "\n");
     output.write("PROGRAM_MEM:\n\n");
 
+
+    #allocate memory for global ids
+    assem.dataMem["work_dims"] = 11; #11 is the maximum number of dimensions allowed
+    for i in range(0,12):
+        assem.dataMem["glob_ids" + i] = 0;
+
+    assem.dataMem["glob_ids"] = "&glob_ids0";
+
+    #create fake global id data if debugging is on
+    if debugging:
+        assem.dataMem["glob_ids0"] = 7390;
+        assem.dataMem["glob_ids1"] = 3040;
+        assem.dataMem["glob_ids2"] = 3902;
+
     filt = re.compile("\s*//.*");
     for line in assem.progMem:
 
@@ -158,7 +172,7 @@ def getHelp():
     helpStr = "\
     -i, --infile <inputfile>              specify the input file, [REQUIRED]\n\
     -o, --outputfile <outputfile>         specify the output file, defaults to the input file with .machine as the extension\n\
-    -d, --debugging                       don't filterout comments,\n\
+    -d, --debugging                       don't filterout comments and other debugging stuff like create fake global id data,\n\
     -v, --verbose                         print output to the terminal\n\
     -s, --subleq                          output subleq assembly only, don't convert to machine code\n\
     -h, --help                            display options";

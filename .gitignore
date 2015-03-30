@@ -7,4 +7,4 @@ sim.py
 demo.sh
 *.pyc
 *.swp
-test/
+test*
