@@ -88,6 +88,8 @@ def main(argv):
     inputText = inputFile.read();
     inputFile.close();
 
+    dataRequest = [];
+
 #parse program and data memory
     memoryArray = parseInput(inputText);
     programMemsString = memoryArray[0];
@@ -116,8 +118,7 @@ def main(argv):
         dataMem = {};
 
         for raw in rawDataStrings:
-            variableName = re.findall("\S*(?=:)", raw)[0];
-            value = re.findall("(?<=#)[-]?\d+|NEXT|&\S+", raw)[0];
+            [variableName, value]  = raw.split(":",1);
             if variableName.strip() in reservedKeywords:
                 dataMem[variableName] = [reservedKeywords[variableName],value]
             else:
@@ -126,7 +127,7 @@ def main(argv):
                     value = nextDataMem + 1;
 
                 #pointers
-                if re.match("&",value):
+                elif re.match("&",value):
                     var = value[1:];
 
                     if var not in dataMem:
@@ -135,14 +136,31 @@ def main(argv):
                     else:
                         value = dataMem[var][0];
 
-                #data
+                #local data request
+                elif re.match("%_",value):
+                    var = value[2:];
+                    value = "#1337"; #dummy
+                    dataRequest.append((var,nextDataMem));
+
+                #global pointer request
+                elif re.match("@_",value):
+                    var = value[2:];
+                    value = "#1334"; #dummy
+                    dataRequest.append(("*" + var,nextDataMem));
+
                 if variableName in dataMem:
                     print "warning: multiple instances of \"" + variableName + "\" found in initial data memory"
+                
+                #sets the data memory with initial value
                 dataMem[variableName] = [nextDataMem, str(value)];
 
                 nextDataMem += 1;
                 while isReservedKeyword(nextDataMem):
                     nextDataMem += 1;
+
+        print "Requesting: "
+        for request in dataRequest:
+            print request[0] + " @ #" + str(request[1]);
         
     #create initial program memory
         programMem = re.findall("\S+:\s*#?[^\s,]+|#?[^\s,]+|NEXT", programMemString); 

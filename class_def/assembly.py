@@ -31,15 +31,15 @@ class Assembly:
     def allocateGlobalIdMem(self):
 
         #allocate memory for global ids
-        self.dataMem["work_dims"] = "$work_dimensions"; #11 is the maximum number of dimensions allowed
+        self.dataMem["work_dims"] = "%_work_dimensions"; #11 is the maximum number of dimensions allowed
         for i in range(0,11):
-            self.dataMem["glob_ids" + str(i)] = "$_initIndex" + str(i);
+            self.dataMem["glob_ids" + str(i)] = "%_initIndex" + str(i);
 
         self.dataMem["glob_ids"] = "&glob_ids0";
 
         #allocate memory for the maximum id, if the id equals this value, the core knows to stop
         for i in range(0,11):
-            self.dataMem["glob_idsMax" + str(i)] = "$_maxIndex" + str(i); 
+            self.dataMem["glob_idsMax" + str(i)] = "%_maxIndex" + str(i); 
 
         self.dataMem["glob_idsMax"] = "&glob_idsMax0";
 
