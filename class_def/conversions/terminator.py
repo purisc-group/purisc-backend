@@ -66,8 +66,7 @@ def returnF(instr, assem):
     if ret != "__VOID__":
         assem.progMem.append(clear("return"));
         assem.progMem.append(next_subleq(ret , "return"));
-    
-    assem.progMem.append(subleq("0","0","#-1"))
+        assem.progMem.append(subleq("0","0","#-1"))
 
 def callParseArgs(argStr):
     name = re.findall("(?<=i\d\d)\s+\S+(?=\()",argStr)[0].strip();

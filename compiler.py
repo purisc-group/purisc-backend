@@ -4,10 +4,11 @@ from class_def.assembly import Assembly
 import sys, getopt
 from subprocess import call
 import os
+from class_def.conversions.helpers import subleq
 
 def main(argv):
     compilerVersion = 0.11;
-    [inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging] = parseCmdArgs(argv);
+    [inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores] = parseCmdArgs(argv);
 
     #run clang if given a c or cl file
     if ext == 'c':
@@ -45,22 +46,30 @@ def main(argv):
 
     #walk through each function and generate subleq assembly
     for function in functions:
+        #allocate function parameter memory
+        function.allocateParamMemory(assem);
+
+        #generate subleq instructions
         for instruction in function.instructions:
             instruction.generateSubleq(instruction,assem);
 
     #wrap the instructions in the nested for loops for each dimension
     assem.generateKernelLoop();
 
-
-    output = open(assemFileName,"w");
-    output.write("//Compiler with j-backend-" + str(compilerVersion) + "\n");
-    output.write("PROGRAM_MEM:\n\n");
-
-    #create fake global id data if debugging is on
+    #create fake global id data and jump to location -1 at the end if debugging is on
     if debugging:
         assem.dataMem["glob_ids0"] = 7390;
         assem.dataMem["glob_ids1"] = 3040;
         assem.dataMem["glob_ids2"] = 3902;
+        assem.dataMem["glob_idsMax0"] = 7392;
+        assem.dataMem["glob_idsMax1"] = 3041;
+        assem.dataMem["glob_idsMax2"] = 3903;
+        assem.progMem.append(subleq("t0","t0","#-1"));
+
+
+    output = open(assemFileName,"w");
+    output.write("//Compiler with j-backend-" + str(compilerVersion) + "\n");
+    output.write("PROGRAM_MEM:\n\n");
 
     filt = re.compile("\s*//.*");
     for line in assem.progMem:
@@ -109,10 +118,11 @@ def parseCmdArgs(argv):
     debugging = False;
     frontEnd = False;
     slqOnly = False;
+    cores = 2;
 
 #Command line arguments
     try:
-        opts, args = getopt.getopt(argv, "i:o:vdsh")
+        opts, args = getopt.getopt(argv, "i:o:c:vdsh")
     except getopt.GetoptError:
         print usage(); 
         sys.exit(2);
@@ -138,8 +148,15 @@ def parseCmdArgs(argv):
             print getHelp();
             sys.exit(0);
 
+        elif opt in ("-c", "--cores"):
+            cores = int(arg);
+
     if inputFileName == "":
         print usage();
+        sys.exit(2);
+
+    if cores < 1:
+        print "error - cores must be a positive integer"
         sys.exit(2);
 
     extStart = inputFileName.rfind(".");
@@ -157,7 +174,7 @@ def parseCmdArgs(argv):
     else:
         outputFileName = name + ".machine";
 
-    return inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging;
+    return inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores;
 
 def usage():
     return "Usage: python",sys.argv[0],"[-i inputfile] [options]";
@@ -170,6 +187,7 @@ def getHelp():
     -d, --debugging                       don't filterout comments and other debugging stuff like create fake global id data,\n\
     -v, --verbose                         print output to the terminal\n\
     -s, --subleq                          output subleq assembly only, don't convert to machine code\n\
+    -c, --cores <cores>                   number of cores that need this program, will create cpu0, cpu1, ... up to cpu{cores-1}\n\
     -h, --help                            display options";
 
     return helpStr;

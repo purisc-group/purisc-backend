@@ -2,17 +2,27 @@ import conversions.arithmetic as arithmetic
 import conversions.memAccess as mem
 import conversions.terminator as term
 import conversions.logical as logical
+import re
 
 class Instruction:
 
 	def __init__(self,instrStr):
-		#print instrStr
-		self.result = parseResult(instrStr);
-		self.args = "";
+                raw = instrStr.split("=");
+
+                if len(raw) == 2:
+                    self.result = raw[0].strip();
+                    rawInstr = raw[1].strip();
+
+                else:
+                    self.result = "";
+                    rawInstr = raw[0].strip();
+
+		self.args = [];
+                self.params = [];
 		self.generateSubleq = voidAction;
 
 		for tupple in instrTypes:
-			if tupple[0] in instrStr:
+			if re.match(tupple[0],rawInstr):
 				index = instrStr.find(tupple[0]) + len(tupple[0]);
 				self.args = tupple[1](instrStr[index:]);
 				self.generateSubleq = tupple[2];

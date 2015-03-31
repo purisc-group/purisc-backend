@@ -32,7 +32,12 @@ def allocate(instr,assem):
 
 def storeParseArgs(argStr):
 
-	arg1Matches = re.findall("(?<=i32)\s+\S+(?=,)|(?<=i64)\s+\S+(?=,)",argStr);
+        params = argStr.split(",");
+        arg1 = re.findall("(?<=\s)\S+$",params[0])[0];
+        arg2 = re.findall("(?<=\s)\S+$",params[1])[0];
+        
+        return [arg1,arg2]
+"""	arg1Matches = re.findall("(?<=i32)\s+\S+(?=,)|(?<=i64)\s+\S+(?=,)",argStr);
 	if len(arg1Matches) != 1:
 		print "parse error on " + argStr
 		sys.exit(2)
@@ -50,9 +55,7 @@ def storeParseArgs(argStr):
 	arg2 = arg2Matches[0];
 	if arg2 == "":
 		print "parse error on " + argStr
-		sys.exit(2);
-
-	return [arg1,arg2];
+		sys.exit(2);"""
 
 def loadParseArgs(argStr):
 	keyword = "i32*";
@@ -87,7 +90,7 @@ def store(instr, assem):
 		assem.progMem.append(subleq(arg2,p_1));
 		assem.progMem.append(clear(p_2));
 		assem.progMem.append(subleq(arg2,p_2));
-		assem.progMem.append(subleq(zero,zero)); #noop, must be at least 2 instructions between modifying and instruction and executing it
+		assem.progMem.append(subleq(0,0)); #noop, must be at least 2 instructions between modifying and instruction and executing it
 
 		assem.progMem.append(subleq(p_0 + ":#1", p_1 + ":#1"));
 		assem.progMem.append(subleq(arg1, p_2 + ":#1"));
@@ -114,13 +117,22 @@ def ptrMathParseArgs(argStr):
 	arg1 = re.findall("(?<=\*\s)\S+(?=,)", argStr)[0];
 	arg2 = re.findall("(?<=i64\s)\S+", argStr)[0];
 
+        """params = argStr.split(",");
+        if len(re.findall("(?<=addrspace\()\d+(?=\)\*)",params[0])) > 0:
+            arg1 = "@_" + arg1;
+
+        if len(re.findall("(?<=addrspace\()\d+(?=\)\*)",params[1])) > 0:
+            arg2 = "@_" + arg2;"""
+
 	memArgs.append(arg1);
 	memArgs.append(arg2);
 	return memArgs;
 
 def ptrMath(instr, assem):
 	a = instr.args[-2];
+
 	b = instr.args[-1];
+
 	sizeArgs = instr.args[0:len(instr.args)-2]; #data for the size of the structure accessing
 	result = instr.result;
 
@@ -144,7 +156,7 @@ def ptrMath(instr, assem):
 	assem.progMem.append(subleq(t0,result));
 	assem.progMem.append(subleq(b,result));
 
-	assem.dataMem[result] = "&" + a; #dummy
+        assem.dataMem[result] = "&" + a; #dummy
 
 def sextParseArgs(argStr):
 	arg1 = re.findall("(?<=i32)\s+\S+\s+(?=to)",argStr)[0];
@@ -156,4 +168,4 @@ def sext(instr, assem):
 	result = instr.result;
 
 	assem.progMem.append(clear(result));
-	assem.progMem.append(next_subleq(a,result));
+	assem.progMem.append(subleq(a,result));
