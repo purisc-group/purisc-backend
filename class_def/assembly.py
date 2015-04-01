@@ -58,6 +58,7 @@ class Assembly:
             self.progMem.insert(0,next_subleq(dim + ":" + t0,t0));
 
             #put the increment stage at the end of everything
+            self.progMem.append("\n");
             self.progMem.append(next_subleq(0,globalIds));
             self.progMem.append(next_subleq(1,globalIds));
             self.progMem.append(subleq(t0,t0,dim));

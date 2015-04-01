@@ -5,6 +5,7 @@ import sys, getopt
 from subprocess import call
 import os
 from class_def.conversions.helpers import subleq
+import assembler
 
 def main(argv):
     compilerVersion = 0.11;
@@ -69,38 +70,40 @@ def main(argv):
 
     output = open(assemFileName,"w");
     output.write("//Compiler with j-backend-" + str(compilerVersion) + "\n");
-    output.write("PROGRAM_MEM:\n\n");
 
-    filt = re.compile("\s*//.*");
-    for line in assem.progMem:
+    for i in range(0,cores):
+        output.write("\n\n\nPROGRAM_MEM_" + str(i) + ":\n\n");
 
-        #filter out comments if debugging flag is set
-        if debugging:
-            lineToWrite = line;
-        else:
-            lineToWrite = filt.sub("",line);
-        
-        if line[-1] != ":":
-            lineToWrite += "\n";
+        filt = re.compile("\s*//.*");
+        for line in assem.progMem:
+
+            #filter out comments if debugging flag is set
+            if debugging:
+                lineToWrite = line;
+            else:
+                lineToWrite = filt.sub("",line);
             
-        output.write(lineToWrite);
-        if fVerbose:
-            print lineToWrite;
+            if line[-1] != ":":
+                lineToWrite += "\n";
+                
+            output.write(lineToWrite);
+            if fVerbose:
+                print lineToWrite;
 
 
-    output.write("\n\n");
-    output.write("DATA_MEM:\n\n");
-    for mem in assem.dataMem:
-        value = assem.dataMem[mem];
-        lineToWrite = str(mem) + ":";
+        output.write("\n\n");
+        output.write("DATA_MEM_" + str(i) + ":\n\n");
+        for mem in assem.dataMem:
+            value = assem.dataMem[mem];
+            lineToWrite = str(mem) + ":";
 
-        if re.match("-?\d",str(value)):
-            lineToWrite += "#";
-        lineToWrite += str(value) + "\n";
+            if re.match("-?\d",str(value)):
+                lineToWrite += "#";
+            lineToWrite += str(value) + "\n";
 
-        output.write(lineToWrite);
-        if fVerbose:
-            print lineToWrite;
+            output.write(lineToWrite);
+            if fVerbose:
+                print lineToWrite;
 
     output.close();
 
@@ -109,7 +112,7 @@ def main(argv):
         compilerPath = sys.argv[0];
         path = compilerPath[:compilerPath.rindex("compiler.py")];
         command = "python " + path + "assembler.py -i " + assemFileName + " -o " + outputFileName;
-        call(command.split());
+        result = call(command.split());
         os.remove(assemFileName);
 
 def parseCmdArgs(argv):
@@ -150,6 +153,9 @@ def parseCmdArgs(argv):
 
         elif opt in ("-c", "--cores"):
             cores = int(arg);
+
+        elif opt in ("-p", "--print"):
+            printOnly = True;
 
     if inputFileName == "":
         print usage();

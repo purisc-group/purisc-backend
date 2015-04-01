@@ -8,6 +8,7 @@ import struct
 
 #if -r flag is not set, it will output as a binary file. There is a 8 byte header. The first 4 bytes corresponding to a 32 bit integer representing the number of lines (groups of 3 operands) in the program memory (comes first) and the last 4 bytes corresponding to the number of data memory values.
 
+
 reservedKeywords = {"OFLAG": 1337,"OREG":1338}
 
 def main(argv):
@@ -79,10 +80,7 @@ def main(argv):
 
     #if don't specify output file, set it to the inputfile with .machine extension
     if outputFileName == "":
-        extIndex = inputFileName.rfind(".");
-        if extIndex == -1:
-            extIndex = len(inputFileName);
-        outputFileName = inputFileName[:extIndex] + ".machine"
+        outputFileName = getNakedName(inputFileName) + ".machine"
         
     inputFile = open(inputFileName,"r");
     inputText = inputFile.read();
@@ -96,7 +94,7 @@ def main(argv):
     dataMemsString = memoryArray[1];
     numProgs = len(programMemsString);
 
-    memory = range(0,8*1024);
+    memory = range(0,localmemory);
     for i in memory:
         if zeroMemory:
             memory[i] = 0;
@@ -104,7 +102,7 @@ def main(argv):
             memory[i] = i;
 
 
-    for i in range(len(programMemsString)):
+    for i in range(numProgs):
         programMemString = programMemsString[i];
         dataMemString = dataMemsString[i];
 
@@ -139,14 +137,17 @@ def main(argv):
                 #local data request
                 elif re.match("%_",value):
                     var = value[2:];
-                    value = "#1337"; #dummy
-                    dataRequest.append((var,nextDataMem));
+                    value = "1337"; #dummy
+                    dataRequest.append(nextDataMem);
 
                 #global pointer request
                 elif re.match("@_",value):
                     var = value[2:];
-                    value = "#1334"; #dummy
-                    dataRequest.append(("*" + var,nextDataMem));
+                    value = "1337"; #dummy
+                    dataRequest.append(str(nextDataMem) + "*");
+
+                elif re.match("#",value):
+                    value = value[1:];
 
                 if variableName in dataMem:
                     print "warning: multiple instances of \"" + variableName + "\" found in initial data memory"
@@ -158,10 +159,6 @@ def main(argv):
                 while isReservedKeyword(nextDataMem):
                     nextDataMem += 1;
 
-        print "Requesting: "
-        for request in dataRequest:
-            print request[0] + " @ #" + str(request[1]);
-        
     #create initial program memory
         programMem = re.findall("\S+:\s*#?[^\s,]+|#?[^\s,]+|NEXT", programMemString); 
         if len(programMem) > dataMemOffset:
@@ -227,7 +224,6 @@ def main(argv):
             val = dataMem[i][1];
             memory[location] = val;
 
-    
     outputString = "";
     outputFiles = [];
 
@@ -266,6 +262,14 @@ def main(argv):
 
     for out in outputFiles:
         out.close();
+    requestFile = open( getNakedName(outputFileName) + ".request",'w');
+    requestFile.write(str(len(dataRequest)/numProgs - 23) + "\n"); # write the number of args at the top of the file
+                                                               # there are 11 index location, 11 max index locations 
+                                                       #and 1 dimension location plus any arguments
+
+    #group data corresponding to cpu0 and cpu1 together
+    for i in range(0,len(dataRequest)/numProgs):
+        requestFile.write(str(dataRequest[i]) + "," + str(dataRequest[i + len(dataRequest)/2]) + "\n");
 
     if verbose: 
         print outputString;
@@ -342,6 +346,14 @@ def maxReservedAddress():
         if value > maxAddr:
             maxAddr = value
     return maxAddr
+
+def getNakedName(filename):
+    idx = filename.rfind(".");
+    if idx == -1:
+        return filename;
+    
+    else:
+        return filename[:idx];
     
 if __name__ == '__main__':
     main(sys.argv[1:])

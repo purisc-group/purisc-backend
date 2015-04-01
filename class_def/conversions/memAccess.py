@@ -37,36 +37,9 @@ def storeParseArgs(argStr):
         arg2 = re.findall("(?<=\s)\S+$",params[1])[0];
         
         return [arg1,arg2]
-"""	arg1Matches = re.findall("(?<=i32)\s+\S+(?=,)|(?<=i64)\s+\S+(?=,)",argStr);
-	if len(arg1Matches) != 1:
-		print "parse error on " + argStr
-		sys.exit(2)
-
-	arg1 = arg1Matches[0];
-	if arg1 == "":
-		print "parse error on " + argStr
-		sys.exit(2);
-
-	arg2Matches = re.findall("(?<=i32\*)\s+[^\s,]+|(?<=i64\*)\s+\[^\s,]+", argStr);
-	if len(arg2Matches) != 1:
-		print "parse error on " + argStr
-		sys.exit(2)
-
-	arg2 = arg2Matches[0];
-	if arg2 == "":
-		print "parse error on " + argStr
-		sys.exit(2);"""
 
 def loadParseArgs(argStr):
-	keyword = "i32*";
-
-	index = argStr.find(keyword) + len(keyword);
-
-	indexEnd = argStr.find(",");
-	if indexEnd == -1:
-		indexEnd = len(argStr);
-	
-	return [argStr[index:indexEnd].strip()];
+        return re.findall("(?<=\*\s)\S+(?=,)|(?<=\*\s)\S+(?=$)",argStr)
 
 def store(instr, assem):
 	arg1 = instr.args[0];
