@@ -9,7 +9,7 @@ import assembler
 
 def main(argv):
     compilerVersion = 0.11;
-    [inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores] = parseCmdArgs(argv);
+    [inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores, language] = parseCmdArgs(argv);
 
     #run clang if given a c or cl file
     if ext == 'c':
@@ -43,7 +43,7 @@ def main(argv):
 
 
     #struct containing compiler information
-    assem = Assembly();
+    assem = Assembly(language);
 
     #walk through each function and generate subleq assembly
     for function in functions:
@@ -55,7 +55,8 @@ def main(argv):
             instruction.generateSubleq(instruction,assem);
 
     #wrap the instructions in the nested for loops for each dimension
-    assem.generateKernelLoop();
+    if language == 'cl':
+        assem.generateKernelLoop();
 
     #create fake global id data and jump to location -1 at the end if debugging is on
     if debugging:
@@ -70,6 +71,8 @@ def main(argv):
 
     output = open(assemFileName,"w");
     output.write("//Compiler with j-backend-" + str(compilerVersion) + "\n");
+    if language not in ['cl']:
+        cores = 1;
 
     for i in range(0,cores):
         output.write("\n\n\nPROGRAM_MEM_" + str(i) + ":\n\n");
@@ -122,10 +125,11 @@ def parseCmdArgs(argv):
     frontEnd = False;
     slqOnly = False;
     cores = 2;
+    language = 'cl';
 
 #Command line arguments
     try:
-        opts, args = getopt.getopt(argv, "i:o:c:vdsh")
+        opts, args = getopt.getopt(argv, "i:o:c:vdshl:")
     except getopt.GetoptError:
         print usage(); 
         sys.exit(2);
@@ -156,6 +160,9 @@ def parseCmdArgs(argv):
 
         elif opt in ("-p", "--print"):
             printOnly = True;
+        
+        elif opt in ("-l", "--language"):
+            language = arg;
 
     if inputFileName == "":
         print usage();
@@ -163,6 +170,13 @@ def parseCmdArgs(argv):
 
     if cores < 1:
         print "error - cores must be a positive integer"
+        sys.exit(2);
+
+    if language not in languages():
+        print "error - not recognized language, acceptable languages are:";
+        langs = languages();
+        for l in langs:
+            print l;
         sys.exit(2);
 
     extStart = inputFileName.rfind(".");
@@ -180,7 +194,7 @@ def parseCmdArgs(argv):
     else:
         outputFileName = name + ".machine";
 
-    return inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores;
+    return inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores, language;
 
 def usage():
     return "Usage: python",sys.argv[0],"[-i inputfile] [options]";
@@ -194,9 +208,13 @@ def getHelp():
     -v, --verbose                         print output to the terminal\n\
     -s, --subleq                          output subleq assembly only, don't convert to machine code\n\
     -c, --cores <cores>                   number of cores that need this program, will create cpu0, cpu1, ... up to cpu{cores-1}\n\
+    -l, --language <lang>                 sets the language. Either 'cl' or 'c' \n\
     -h, --help                            display options";
 
     return helpStr;
+
+def languages():
+    return ['c', 'cl'];
 
 
 if __name__ == '__main__':

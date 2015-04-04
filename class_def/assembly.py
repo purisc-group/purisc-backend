@@ -2,7 +2,7 @@ from collections import OrderedDict
 from conversions.helpers import *
 
 class Assembly:
-    def __init__(self):
+    def __init__(self, lang):
         self.dataMem = OrderedDict(); 
         self.progMem = [];
         #count of the last temp variable used
@@ -10,7 +10,9 @@ class Assembly:
         self.stackCount = 0;
         #list of number of times a reserved word was used
         self.reservedCount = {};
-        self.allocateGlobalIdMem();
+
+        if lang == 'cl':
+            self.allocateGlobalIdMem();
 
     #call this to get a keyword with a count appended to it to
     #avoid multiple label pointing to different locations

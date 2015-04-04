@@ -4,12 +4,31 @@ from helpers import clear
 import re
 
 def add(instr, assem):
-    arg1 = instr.args[0];
-    arg2 = instr.args[1];
-    result = instr.result;
+    a = instr.args[0];
+    b = instr.args[1];
+    c = instr.result;
 
     t0 = assem.getNextTemp();
-    t1 = assem.getNextTemp();
+
+    #check for literals
+    if re.match("\d+",a):
+        if a not in assem.dataMem:
+            assem.dataMem[a] = a;
+
+    if re.match("\d+",b):
+        if b not in assem.dataMem:
+            assem.dataMem[b] = b;
+
+    assem.progMem.append(next_subleq(t0,t0));
+    assem.progMem.append(next_subleq(a,t0));
+    assem.progMem.append(next_subleq(b,t0));
+    assem.progMem.append(clear(c));
+    assem.progMem.append(next_subleq(t0,c));
+
+
+
+    
+"""    t1 = assem.getNextTemp();
 
     #check for literals
     if re.match("\d+",arg1):
@@ -28,21 +47,32 @@ def add(instr, assem):
     assem.progMem.append(next_subleq(arg1,result));
     assem.progMem.append(clear(t1));
     assem.progMem.append(next_subleq(t1,result));
-    assem.progMem.append(next_subleq(arg2,result));
+    assem.progMem.append(next_subleq(arg2,result));"""
 
 def sub(instr, assem):
-    arg1 = instr.args[0];
-    arg2 = instr.args[1];
-    result = instr.result;
+    a = instr.args[0];
+    b = instr.args[1];
+    c = instr.result;
+
+    #check for literals
+    if re.match("\d+",a):
+        if a not in assem.dataMem:
+            assem.dataMem[a] = a;
+
+    if re.match("\d+",b):
+        if b not in assem.dataMem:
+            assem.dataMem[b] = b;
 
     assem.progMem.append("\n // " + instr.raw);
-    assem.progMem.append(clear(result))
-    assem.progMem.append(next_subleq(arg2, result));
-    assem.progMem.append(next_subleq(arg1, result));
+    assem.progMem.append(clear(c));
+    assem.progMem.append(clear(t0));
+    assem.progMem.append(next_subleq(a,t0));
+    assem.progMem.append(next_subleq(t0,c));
+    assem.progMem.append(next_subleq(b,c));
 
 def mul(instr, assem):
     arg1 = instr.args[0];
-    brg2 = instr.args[1];
+    arg2 = instr.args[1];
     c = instr.result;
 
     a = assem.getNextReserved("mul");
