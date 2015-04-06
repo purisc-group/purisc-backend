@@ -48,6 +48,9 @@ def store(instr, assem):
 	if "%" not in arg1 and arg1 not in assem.dataMem: #move literal->b
 			assem.dataMem[arg1] = int(arg1);
 
+        t0 = assem.getNextTemp();
+        t1 = assem.getNextTemp();
+
 	assem.progMem.append("\n// " + instr.raw);
 
 	#check if second argument is a pointer
@@ -57,28 +60,43 @@ def store(instr, assem):
 		p_2 = assem.getNextReserved("p_");
 
 		#rewrite the necessary instructions
-		assem.progMem.append(clear(p_0));
-		assem.progMem.append(subleq(arg2,p_0));
-		assem.progMem.append(clear(p_1));
-		assem.progMem.append(subleq(arg2,p_1));
-		assem.progMem.append(clear(p_2));
-		assem.progMem.append(subleq(arg2,p_2));
-		assem.progMem.append(subleq(0,0)); #noop, must be at least 2 instructions between modifying and instruction and executing it
+                assem.subleq(p_0,p_0,"NEXT");
+                assem.subleq(t0,t0,"NEXT");
+                assem.subleq(arg2,t0,"NEXT");
+                assem.subleq(t0,p_0,"NEXT");
 
-		assem.progMem.append(subleq(p_0 + ":#1", p_1 + ":#1"));
-		assem.progMem.append(subleq(arg1, p_2 + ":#1"));
+                assem.subleq(p_1,p_1,"NEXT");
+                assem.subleq(t0,t0,"NEXT");
+                assem.subleq(arg2,t1,"NEXT");
+                assem.subleq(t0,p_1,"NEXT");
+
+                assem.subleq(p_2,p_2,"NEXT");
+                assem.subleq(t0,t0,"NEXT");
+                assem.subleq(arg2,t0,"NEXT");
+                assem.subleq(t0,p_2,"NEXT");
+
+                assem.subleq(p_0 + ":#1", p_1 + ":#1", "NEXT");
+                assem.subleq(t0,t0,"NEXT");
+                assem.subleq(arg1,t0,"NEXT");
+                assem.subleq(t0, p_2 + ":#1", "NEXT");
 	
 	else:
-		assem.progMem.append(clear(arg2));
-		assem.progMem.append(subleq(arg1,arg2));
+                assem.subleq(arg2,arg2,"NEXT");
+                assem.subleq(t0,t0,"NEXT");
+                assem.subleq(arg1,t0,"NEXT");
+                assem.subleq(t0,arg2,"NEXT");
 
 def load(instr, assem):
 	arg1 = instr.args[0];
 	result = instr.result;
 
+        t0 = assem.getNextTemp();
+
 	assem.progMem.append("\n// " + instr.raw);
-	assem.progMem.append(clear(result));
-	assem.progMem.append(subleq(arg1,result));
+	assem.subleq(result,result,"NEXT");
+        assem.subleq(t0,t0,"NEXT");
+	assem.subleq(arg1,t0,"NEXT");
+        assem.subleq(t0,result,"NEXT");
 
 def ptrMathParseArgs(argStr):
 	args = re.findall("(?<=\[)\s*\d+",argStr);
@@ -90,12 +108,6 @@ def ptrMathParseArgs(argStr):
 	arg1 = re.findall("(?<=\*\s)\S+(?=,)", argStr)[0];
 	arg2 = re.findall("(?<=i64\s)\S+", argStr)[0];
 
-        """params = argStr.split(",");
-        if len(re.findall("(?<=addrspace\()\d+(?=\)\*)",params[0])) > 0:
-            arg1 = "@_" + arg1;
-
-        if len(re.findall("(?<=addrspace\()\d+(?=\)\*)",params[1])) > 0:
-            arg2 = "@_" + arg2;"""
 
 	memArgs.append(arg1);
 	memArgs.append(arg2);
@@ -115,19 +127,18 @@ def ptrMath(instr, assem):
 		if b not in assem.dataMem:
 			assem.dataMem[b] = int(b);
 
-	t0 = "t" + str(assem.stackCount);
-	assem.stackCount += 1;
+        t0 = assem.getNextTemp();
 
 	if len(sizeArgs) > 1:
 		print "error - can't handle multidimensional structs just yet...sorry";
 		sys.exit(2);
 
 	assem.progMem.append("\n// " + instr.raw);
-	assem.progMem.append(clear(result));
-	assem.progMem.append(subleq(a,result));
-	assem.progMem.append(clear(t0));
-	assem.progMem.append(subleq(t0,result));
-	assem.progMem.append(subleq(b,result));
+        assem.subleq(result,result,"NEXT");
+        assem.subleq(t0,t0,"NEXT");
+        assem.subleq(a,t0,"NEXT");
+        assem.subleq(b,t0,"NEXT");
+        assem.subleq(t0,result,"NEXT");
 
         assem.dataMem[result] = "&" + a; #dummy
 
@@ -140,5 +151,9 @@ def sext(instr, assem):
 	a = instr.args[0];
 	result = instr.result;
 
-	assem.progMem.append(clear(result));
-	assem.progMem.append(subleq(a,result));
+        t0 = assem.getNextTemp();
+
+        assem.subleq(result,result,"NEXT");
+        assem.subleq(t0,t0,"NEXT");
+        assem.subleq(a,t0,"NEXT");
+        assem.subleq(t0,result,"NEXT");

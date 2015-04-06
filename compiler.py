@@ -9,7 +9,7 @@ import assembler
 
 def main(argv):
     compilerVersion = 0.11;
-    [inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores, language] = parseCmdArgs(argv);
+    [inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores, language, blLength, zero] = parseCmdArgs(argv);
 
     #run clang if given a c or cl file
     if ext == 'c':
@@ -60,12 +60,15 @@ def main(argv):
 
     #create fake global id data and jump to location -1 at the end if debugging is on
     if debugging:
+        assem.dataMem["work_dims"] = 3
         assem.dataMem["glob_ids0"] = 7390;
         assem.dataMem["glob_ids1"] = 3040;
         assem.dataMem["glob_ids2"] = 3902;
+        assem.dataMem["glob_ids"] = "&glob_ids0";
         assem.dataMem["glob_idsMax0"] = 7392;
         assem.dataMem["glob_idsMax1"] = 3041;
         assem.dataMem["glob_idsMax2"] = 3903;
+        assem.dataMem["glob_idsMax"] = "&glob_idsMax0";
         assem.progMem.append(subleq("t0","t0","#-1"));
 
 
@@ -114,7 +117,7 @@ def main(argv):
     if outputFileName != "":
         compilerPath = sys.argv[0];
         path = compilerPath[:compilerPath.rindex("compiler.py")];
-        command = "python " + path + "assembler.py -i " + assemFileName + " -o " + outputFileName;
+        command = "python " + path + "assembler.py -i " + assemFileName + " -o " + outputFileName + " -b " + blLength + " " + zero;
         result = call(command.split());
         os.remove(assemFileName);
 
@@ -126,10 +129,12 @@ def parseCmdArgs(argv):
     slqOnly = False;
     cores = 2;
     language = 'cl';
+    blLength = '0';
+    zero = '';
 
 #Command line arguments
     try:
-        opts, args = getopt.getopt(argv, "i:o:c:vdshl:")
+        opts, args = getopt.getopt(argv, "i:o:c:vdshl:b:z")
     except getopt.GetoptError:
         print usage(); 
         sys.exit(2);
@@ -164,6 +169,12 @@ def parseCmdArgs(argv):
         elif opt in ("-l", "--language"):
             language = arg;
 
+        elif opt in ("-b", "--bootloader"):
+            blLength = arg;
+
+        elif opt in ("-z", "--zero"):
+            zero = "-z";
+
     if inputFileName == "":
         print usage();
         sys.exit(2);
@@ -194,7 +205,7 @@ def parseCmdArgs(argv):
     else:
         outputFileName = name + ".machine";
 
-    return inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores, language;
+    return inputFileName, ext, assemFileName, outputFileName, fVerbose, debugging, cores, language, blLength, zero;
 
 def usage():
     return "Usage: python",sys.argv[0],"[-i inputfile] [options]";
@@ -209,6 +220,8 @@ def getHelp():
     -s, --subleq                          output subleq assembly only, don't convert to machine code\n\
     -c, --cores <cores>                   number of cores that need this program, will create cpu0, cpu1, ... up to cpu{cores-1}\n\
     -l, --language <lang>                 sets the language. Either 'cl' or 'c' \n\
+    -b, --bootloader <length>             sets the bootloader length, default 32 (for debugging purposes) \n\
+    -z, --zero                            sets unused memory locations to 0\n\
     -h, --help                            display options";
 
     return helpStr;

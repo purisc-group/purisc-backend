@@ -9,7 +9,7 @@ class Instruction:
 	def __init__(self,instrStr):
                 raw = instrStr.split("=");
 
-                if len(raw) == 2:
+                if len(raw) == 2 and instrStr[0] not in ";":
                     self.result = raw[0].strip();
                     rawInstr = raw[1].strip();
 
@@ -22,7 +22,7 @@ class Instruction:
 		self.generateSubleq = voidAction;
 
 		for tupple in instrTypes:
-			if re.match(tupple[0],rawInstr):
+			if re.match(tupple[0].strip(),rawInstr):
 				index = instrStr.find(tupple[0]) + len(tupple[0]);
 				self.args = tupple[1](instrStr[index:]);
 				self.generateSubleq = tupple[2];
@@ -57,5 +57,7 @@ instrTypes = [
 	("ret", term.returnParseArgs, term.returnF),
 	("getelementptr", mem.ptrMathParseArgs, mem.ptrMath),
 	("mul", arithmetic.parseArgs, arithmetic.mul),
-        ("tail call", term.callParseArgs, term.call)
+        ("tail call", term.callParseArgs, term.call),
+        ("call", term.callParseArgs, term.call),
+        ("sdiv", arithmetic.parseArgs, arithmetic.div)
 ]

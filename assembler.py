@@ -263,8 +263,8 @@ def main(argv):
     for out in outputFiles:
         out.close();
     requestFile = open( getNakedName(outputFileName) + ".request",'w');
-    requestFile.write(str(len(dataRequest)/numProgs - 23) + "\n"); # write the number of args at the top of the file
-                                                               # there are 11 index location, 11 max index locations 
+    requestFile.write(str(len(dataRequest)/numProgs - 24) + "\n"); # write the number of args at the top of the file
+                                                               # there are 11 index location, 11 max index locations, 1 done flag location
                                                        #and 1 dimension location plus any arguments
 
     #group data corresponding to cpu0 and cpu1 together

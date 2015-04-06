@@ -30,6 +30,9 @@ class Assembly:
         self.stackCount +=1;
         return temp;
 
+    def subleq(self,a,b,c):
+        self.progMem.append(subleq(a,b,c));
+
     def allocateGlobalIdMem(self):
 
         #allocate memory for global ids
@@ -64,7 +67,10 @@ class Assembly:
             self.progMem.append(next_subleq(0,globalIds));
             self.progMem.append(next_subleq(1,globalIds));
             self.progMem.append(subleq(t0,t0,dim));
-            self.progMem.append(next_subleq(finish + ":" + t0,t0));
+
+            #set the done flag
+            self.progMem.append(next_subleq(finish + ":-1","doneFlag"));
 
         self.dataMem["0"] = 0;
         self.dataMem["1"] = 1;
+        self.dataMem["doneFlag"] = "%_doneflag"
