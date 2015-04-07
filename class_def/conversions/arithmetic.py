@@ -50,12 +50,13 @@ def sub(instr, assem):
 def mul(instr, assem):
     arg1 = instr.args[0];
     arg2 = instr.args[1];
-    c = instr.result;
+    result = instr.result;
 
+    c = assem.getNextReserved("workingResult"); # will hold the value of the negative answer until it is flipped at the end if necessary
     a = assem.getNextReserved("mul");
     b = assem.getNextReserved("mul");
     flip = assem.getNextReserved("flip");
-    i = assem.getNextReserved("i");
+    i0 = assem.getNextReserved("i");
     operand = assem.getNextReserved("operand");
     power = assem.getNextReserved("power");
     decomp = assem.getNextReserved("decomp");
@@ -67,6 +68,7 @@ def mul(instr, assem):
     flipA = assem.getNextReserved("flipA");
     checkB = assem.getNextReserved("checkB");
     flipB = assem.getNextReserved("flipB");
+    continue0 = assem.getNextReserved("continue0_");
     continue1 = assem.getNextReserved("continue1_");
     aLess = assem.getNextReserved("aLess");
     continue2 = assem.getNextReserved("continue2_");
@@ -86,6 +88,8 @@ def mul(instr, assem):
     regardless = assem.getNextReserved("regardless");
     flipSign = assem.getNextReserved("flipSign");
     finish = assem.getNextReserved("finish");
+    noflipA = assem.getNextReserved("noFlipA");
+    noflipB = assem.getNextReserved("noFlipB");
 
     t0 = assem.getNextTemp();
     t1 = assem.getNextTemp();
@@ -96,64 +100,175 @@ def mul(instr, assem):
     assem.progMem.append("\n// " + instr.raw);
 
     #determine the sign of the result
-    assem.progMem.append(clear(c));
-    assem.progMem.append(clear(a));
-    assem.progMem.append(clear(b));
-    assem.progMem.append(clear(flip));
-    assem.progMem.append(subleq(a,t0,flipA));
-    assem.progMem.append(subleq(t0,t0,checkB));
-    assem.progMem.append(next_subleq(flipA + ": 0",a));
-    assem.progMem.append(next_subleq(1,flip));
-    assem.progMem.append(next_subleq(checkB + ": " + t0,t0));
-    assem.progMem.append(subleq(b,t0,flipB));
-    assem.progMem.append(subleq(t0,t0,continue1));
-    assem.progMem.append(next_subleq(flipB + ": 0",b));
-    assem.progMem.append(next_subleq(1,flip));
+    assem.subleq(a,a,"NEXT"); #check the sign of A
+    assem.subleq(b,b,"NEXT");
+    assem.subleq(flip,flip,"NEXT");
+    assem.subleq(t0,t0,"NEXT");
+    assem.subleq(arg1,t0,noflipA);
+    assem.subleq(t0,a,"NEXT");
+    assem.subleq(1,flip,checkB);
+    assem.subleq(noflipA + ":" + arg1,a,"NEXT");
+
+    assem.subleq(checkB + ":" + t0,t0,"NEXT"); #check the sign of B
+    assem.subleq(arg2,t0,noflipB);
+    assem.subleq(t0,b,"NEXT");
+    assem.subleq(-1,flip,"NEXT");
+    assem.subleq(t0,t0,continue0);
+    assem.subleq(noflipB + ":" + arg2,b,"NEXT");
 
     #determine the operand
-    assem.progMem.append(next_subleq(continue1 + ": " + b,t1));
-    assem.progMem.append(subleq(a,t1,aLess));
-    assem.progMem.append(next_subleq(b,operand));
-    assem.progMem.append(next_subleq(a,power));
-    assem.progMem.append(subleq(t0,t0,continue2));
-    assem.progMem.append(next_subleq(aLess + ": " + a,operand));
-    assem.progMem.append(next_subleq(b,power));
+    assem.subleq(continue0 + ":" + operand,operand,"NEXT");
+    assem.subleq(power,power,"NEXT");
+    assem.subleq(a,b,aLess);
+    assem.subleq(a,power,"NEXT");
+    assem.subleq(b,operand,"NEXT");
+    assem.subleq(t0,t0,"NEXT");
+    assem.subleq(power,t0,"NEXT");
+    assem.subleq(t0,operand,"NEXT");
+    assem.subleq(t0,t0,continue1);
+    assem.subleq(aLess + ":" + a,operand,"NEXT");
+    assem.subleq(b,power,"NEXT");
+    assem.subleq(t0,t0,'NEXT');
+    assem.subleq(operand,t0,"NEXT");
+    assem.subleq(t0,power,"NEXT");
 
     #decompose the operand into powers of 2
-    assem.progMem.append(next_subleq(continue2 + ": " + i,i));
-    assem.progMem.append(next_subleq(30,i));
-    assem.progMem.append(next_subleq(begin + ": " + decomp,decomp));
-    assem.progMem.append(next_subleq(decomp_,decomp));
-    assem.progMem.append(next_subleq(0,decomp));
-    assem.progMem.append(next_subleq(i,decomp));
-    assem.progMem.append(next_subleq(powers,powers));
-    assem.progMem.append(next_subleq(p_,powers));
-    assem.progMem.append(next_subleq(0,powers));
-    assem.progMem.append(next_subleq(i,powers));
-    assem.progMem.append(clear(p_0));
-    assem.progMem.append(next_subleq(powers,p_0));
-    assem.progMem.append(clear(d_0));
-    assem.progMem.append(next_subleq(decomp,d_0));
-    assem.progMem.append(clear(p_1));
-    assem.progMem.append(next_subleq(powers,p_1));
+    #maxPower = -1;
+    # for i = 30 -> 0
+        #if operand - 2^i >= 0
+            #powers[i] = 1
+            #operand = operand - 2^i
+            #maxPower == -1
+                #maxPower = i
+            #if operand - 2^i == 0:
+                #break;
 
-    assem.progMem.append(next_subleq(p_0 + ": #1",operand));
-    assem.progMem.append(subleq(1,operand,less));
-    assem.progMem.append(next_subleq(1,d_0 + ":#1"));
-    assem.progMem.append(next_subleq(1,operand));
-    assem.progMem.append(next_subleq(0,operand));
-    assem.progMem.append(subleq(t0,t0,test));
-    assem.progMem.append(next_subleq(less + ": 1",operand));
-    assem.progMem.append(next_subleq(p_1 + ":#1",operand));
-    assem.progMem.append(next_subleq(test + ": 0",i));
-    assem.progMem.append(next_subleq(-1,i));
-    assem.progMem.append(subleq(1,operand,restore));
-    assem.progMem.append(subleq(t0,t0,continue3));
-    assem.progMem.append(next_subleq(restore + ": 1",operand));
-    assem.progMem.append(subleq(t0,t0,begin));
+    two_i = assem.getNextReserved("two_i");
+    decomp_i = assem.getNextReserved("decomp_i");
+    restore = assem.getNextReserved("restore");
+    maxPower = assem.getNextReserved("maxPower");
+    maxFlag = assem.getNextReserved("maxFlag");
+    notMax = assem.getNextReserved("notMax");
+    continue2 = assem.getNextReserved("continue2");
+    incr0 = assem.getNextReserved("inc");
+    loop0 = assem.getNextReserved("loop");
+    t4 = assem.getNextTemp();
+
+    assem.dataMem[-2] = -2;
+    assem.dataMem[0] = 0;
+
+    #setup loop
+    assem.subleq(continue1 + ":" + i0,i0,"NEXT");
+    assem.subleq(-30,i0,"NEXT");
+    assem.subleq(two_i,two_i,"NEXT");
+    assem.subleq("powersOf2_",two_i,"NEXT");
+    assem.subleq(30,two_i,"NEXT");
+    assem.subleq(decomp_i,decomp_i,"NEXT");
+    assem.subleq("mul_decomp_",decomp_i,"NEXT");
+    assem.subleq(30,decomp_i,"NEXT");
+    assem.subleq(maxPower,maxPower,"NEXT");
+    assem.subleq(maxFlag,maxFlag,"NEXT");
+    assem.subleq(-2,maxFlag, "NEXT");
+
+    assem.subleq(loop0 + ":" + p_0,p_0,"NEXT");
+    assem.subleq(two_i,p_0,"NEXT");
+    assem.subleq(d_0,d_0,"NEXT");
+    assem.subleq(decomp_i,d_0,"NEXT");
+    assem.subleq(p_1,p_1,"NEXT");
+    assem.subleq(two_i,p_1,"NEXT");
+    assem.subleq(p_0 + ":#1",operand,"NEXT");  #operand = operand - 2^i
+    assem.subleq(-1,operand,restore);   #add one to handle zero case
+    assem.subleq(1,operand,"NEXT");
+    assem.subleq(-1,d_0 + ":#1","NEXT"); #subtract the one
+    assem.subleq(1,maxFlag,notMax);
+    assem.subleq(i0,maxPower,"NEXT");
+    assem.subleq(notMax + ":0",operand,continue2);
+    assem.subleq(t0,t0,incr0);
+    assem.subleq(restore + ":" + t0,t0,"NEXT");
+    assem.subleq(p_1 + ":#1",t0,"NEXT");
+    assem.subleq(t0,operand,"NEXT");
+    assem.subleq(1,operand,"NEXT");
+
+    #decrement and repeat if necessary
+    assem.subleq(incr0 + ":-1",decomp_i,"NEXT");
+    assem.subleq(-1,two_i,"NEXT");
+    assem.subleq(1,i0,"NEXT");
+    assem.subleq(t0,t0,"NEXT");
+    assem.subleq(i0,t0,loop0);
+
+
 
     #do successive additions of powers of 2
-    assem.progMem.append(next_subleq(continue3 + ": " + i,i));
+    i1 = assem.getNextReserved("i");
+    adder = assem.getNextReserved("adder");
+    op = assem.getNextReserved("op");
+    loop2 = assem.getNextReserved("loop");
+    continue3 = assem.getNextReserved("continue3");
+    continueLoop = assem.getNextReserved("contLoop");
+    d_3 = assem.getNextReserved("d_3");
+    noADD = assem.getNextReserved("noAdd");
+
+
+    assem.subleq(continue2 + ":" + i1,i1,"NEXT");
+    assem.subleq("2938483",t0,"NEXT");
+    assem.subleq(t0,t0,"NEXT");
+    assem.subleq(maxPower,t0,"NEXT")
+    assem.subleq(t1,t1,"NEXT");
+    assem.subleq(t0,t1,"NEXT");
+    assem.subleq(maxPower,maxPower,"NEXT");
+    assem.subleq(t1,maxPower,"NEXT");
+    assem.subleq(adder,adder,"NEXT");
+    assem.subleq(op,op,"NEXT");
+    assem.subleq(power,op,"NEXT");
+    assem.subleq(op,adder,'NEXT');
+    assem.subleq(decomp_i,decomp_i,"NEXT");
+    assem.subleq("mul_decomp_",decomp_i,"NEXT");
+    assem.subleq(c,c,"NEXT");
+
+    assem.subleq(loop2 + ":" + maxPower,i1,continueLoop);  #for i = 0 -> maxPower
+    assem.subleq(t0,t0,continue3);
+    assem.subleq(continueLoop + ":" + t0,t0,"NEXT");
+    assem.subleq(d_3,d_3,"NEXT");
+    assem.subleq(decomp_i,d_3,"NEXT");
+    assem.subleq(maxPower,t0,"NEXT"); #restore i to what it was before comparison
+    assem.subleq(t0,i1,"NEXT");
+    assem.subleq(0,d_3 + ":#1",noADD);
+    assem.subleq(adder,c,"NEXT");
+    assem.subleq(noADD + ":" + t0,t0,"NEXT");
+    assem.subleq(adder,t0,"NEXT");
+    assem.subleq(t0,adder,"NEXT");
+
+    #increment stuff
+    assem.subleq(-1,i1,"NEXT");
+    assem.subleq(1,decomp_i,"NEXT");
+    assem.subleq(t0,t0,loop2);
+    
+    assem.subleq(continue3 + ":" + t0,t0,"NEXT");
+    
+    #determine sign. c is the negative right now so flip if flip flag == 0
+    done = assem.getNextReserved("done");
+    ansPos = assem.getNextReserved("ansPos");
+    ansNeg = assem.getNextReserved("ansNeg");
+
+    '''assem.subleq(result,result,"NEXT");
+    assem.subleq(flip,result,"NEXT");
+    assem.subleq(t0,t0,"#-1");'''
+
+    assem.subleq(-1,flip,ansNeg);
+    assem.subleq(1,flip,ansPos);
+    assem.subleq(t0,t0,ansNeg);
+    assem.subleq(ansPos + ":" + result,result,"NEXT");
+    assem.subleq(c,result,"NEXT");
+    assem.subleq(t0,t0,done);
+    assem.subleq(ansNeg + ":" + t0,t0,"NEXT");
+    assem.subleq(c,t0,"NEXT");
+    assem.subleq(t0,result,"NEXT");
+    assem.subleq(done + ":" + t0,t0,"NEXT");
+
+    
+
+    '''
+    assem.progMem.append(next_subleq(continue2 + ": " + i,i));
     assem.progMem.append(next_subleq(begin2 + ": " + decomp,decomp));
     assem.progMem.append(next_subleq(decomp_,decomp));
     assem.progMem.append(next_subleq(0,decomp));
@@ -186,7 +301,7 @@ def mul(instr, assem):
     assem.progMem.append(subleq(t0,t0,finish));
 
     assem.progMem.append(next_subleq(flipSign + ": 0",c));
-    assem.progMem.append(next_subleq(finish + ": " + t0,t0)); #dummy
+    assem.progMem.append(next_subleq(finish + ": " + t0,t0)); #dummy'''
 
 
     assem.dataMem["1"] = "#1";
@@ -195,6 +310,7 @@ def mul(instr, assem):
     assem.dataMem["30"] = "#30";
     assem.dataMem["-1"] = "#-1";
     assem.dataMem["2"] = "#2";
+    assem.dataMem["2938483"] = "#2938483";
 
     #space for the powers of 2
     assem.dataMem["powersOf2_1"] = "#1"
@@ -229,6 +345,7 @@ def mul(instr, assem):
     assem.dataMem["powersOf2_536870912"] = "#536870912"
     assem.dataMem["powersOf2_1073741824"] = "#1073741824"
     assem.dataMem["powersOf2_"] = "&powersOf2_1"
+
 
     #space for the decomposition, will be reused every multiplication
     assem.dataMem["mul_decomp_0"] = "#0"
@@ -315,16 +432,6 @@ def div(instr, assem):
     assem.subleq(t0,t0,continue1);
     assem.subleq(noflipB + ":" + arg2,b,"NEXT");
 
-    #return 0 if a < b
-    """assem.subleq(continue0 + ":" + t0,t0,"NEXT");
-    assem.subleq(a,t0,"NEXT");
-    assem.subleq(t1,t1,"NEXT");
-    assem.subleq(t0,t1,"NEXT");
-    assem.subleq(b,t1,"NEXT");
-    assem.subleq(-1,t1,zero);
-    assem.subleq(t0,t0,continue1);
-    assem.subleq(zero + ":" + c,c,done);"""
-
     #compute d*2^i
     assem.subleq(continue1 + ":" + b,"div_d_pwrs_0","NEXT");
 
@@ -376,8 +483,8 @@ def div(instr, assem):
     restore = assem.getNextReserved("restore");
     break0 = assem.getNextReserved("break0");
     continue2 = assem.getNextReserved("continue2");
-    d_i = assem.getNextReserved("d_i");   #pointer to d*2^i
-    two_i = assem.getNextReserved("two_i"); #pointer to 2^i
+    d_i = "d_i";   #pointer to d*2^i
+    two_i = "two_i"; #pointer to 2^i
     d_0 = assem.getNextReserved("d_0");
     d_1 = assem.getNextReserved("d_1");
     p_0 = assem.getNextReserved("p_0");
@@ -392,11 +499,15 @@ def div(instr, assem):
     assem.subleq(-30,i1,"NEXT");
 
     assem.subleq(loop1 + ":" + d_0,d_0,"NEXT");
-    assem.subleq(d_i,d_0,"NEXT");
+    assem.subleq(t0,t0,"NEXT");
+    assem.subleq(d_i,t0,"NEXT");
+    assem.subleq(t0,d_0,"NEXT");
     assem.subleq(d_1,d_1,"NEXT");
-    assem.subleq(d_i,d_1,"NEXT");
+    assem.subleq(t0,d_1,"NEXT");
     assem.subleq(p_0,p_0,"NEXT");
-    assem.subleq(two_i,p_0,"NEXT");
+    assem.subleq(t0,t0,"NEXT");
+    assem.subleq(two_i,t0,"NEXT");
+    assem.subleq(t0,p_0,"NEXT");
 
     assem.subleq(d_0 + ":#1",n,"NEXT");
     assem.subleq(-1,n,restore);
@@ -409,22 +520,31 @@ def div(instr, assem):
     assem.subleq(restore + ":" + t0,t0,"NEXT");
     assem.subleq(d_1 + ":#1",t0,"NEXT");
     assem.subleq(t0,n,"NEXT");
+    assem.subleq(1,n,"NEXT");
 
     assem.subleq(inc + ":1",i1,"NEXT"); #decrement and check
-    assem.subleq(-1,d_i,"NEXT");
-    assem.subleq(-1,two_i,"NEXT");
+    assem.subleq(1,d_i,"NEXT");
+    assem.subleq(1,two_i,"NEXT");
     assem.subleq(t0,t0,"NEXT");
     assem.subleq(i1,t0,loop1);
-    
+    #assem.subleq(continue2 + ":" + t0,t0,"NEXT");
 
-    assem.subleq(continue2 +":" + t0,t0,"NEXT"); #dummy
+    #fli if necessary
+    flipResult = assem.getNextReserved("flipResult");
+
+    assem.subleq(continue2 +":-1" ,flip,flipResult);
+    assem.subleq(1,flip,done);
+    assem.subleq(flipResult + ":" + t0,t0,"NEXT");
+    assem.subleq(c,t0,"NEXT");
+    assem.subleq(c,c,"NEXT");
+    assem.subleq(t1,t1,"NEXT");
+    assem.subleq(t0,t1,"NEXT");
+    assem.subleq(t1,c,"NEXT");
+
+    #done
+    assem.subleq(done + ":" + t0,t0,"NEXT");
 
 
-    '''assem.subleq(continue0 + ":" + t0,t0,"NEXT");
-    assem.subleq(b,t0,"NEXT");
-    assem.subleq(t0,c,"NEXT");'''
-
-    
     assem.dataMem[-1] = -1;
     assem.dataMem[1] = 1;
     assem.dataMem[30] = 30;
